@@ -1,0 +1,23 @@
+{{- range $name, $hpa := .Values.hpa }}
+{{- if $hpa.enabled }}
+{{- with $hpa }}
+---
+apiVersion: autoscaling/v2beta2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: hpa-{{ template "project.name" $ }}-{{ $name }}
+  labels:
+    app.kubernetes.io/component: horizontal-pod-autoscaler
+    {{ include "project.labels" $ | nindent 4 }}
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: d-{{ template "project.name" $ }}-{{ $name }}
+  minReplicas: {{ .replicas.min }}
+  maxReplicas: {{ .replicas.max }}
+  metrics:
+    {{ toYaml .metrics | nindent 2 }}
+{{- end }}
+{{- end }}
+{{- end }}

@@ -1,0 +1,15 @@
+apiVersion: v2
+name: blue-health-go-srv
+version: 0.1.0
+description: A helm chart for packaging Blue Health Go Service
+type: application
+keywords:
+  - golang
+home: https://github.com/blue-health/blue-health-go-srv
+sources:
+  - https://github.com/blue-health/blue-health-go-srv
+maintainers:
+  - name: Marcin Praski
+    email: marcin.praski@blue.health
+    url: https://github.com/mpraski
+appVersion: 0.1.0

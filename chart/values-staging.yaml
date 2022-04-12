@@ -1,0 +1,68 @@
+serviceAccount: wi-s-blue-blue-health-go-srv
+
+deployments:
+  app:
+    replicaCount: 2
+    containers:
+      app:
+        resources:
+          requests:
+            cpu: 20m
+            memory: 20Mi
+      proxy:
+        resources:
+          requests:
+            cpu: 50m
+            memory: 50Mi
+        command:
+          - "/cloud_sql_proxy"
+          - "-ip_address_types=PRIVATE"
+          - "-instances=XXX=tcp:5432"
+    nodeSelector:
+      cloud.google.com/gke-nodepool: general-n2-standard-2
+
+migrations:
+  containers:
+    proxy:
+      args:
+        - |
+          /cloud_sql_proxy -ip_address_types=PRIVATE -instances=XXX=tcp:5432 &
+          CHILD_PID=$!
+          (while true; do if [[ -f "/lifecycle/main-terminated" ]]; then kill $CHILD_PID; fi; sleep 1; done) &
+          wait $CHILD_PID
+          if [[ -f "/lifecycle/main-terminated" ]]; then exit 0; fi
+
+networkPolicies:
+  database:
+    egress:
+      - to:
+          - ipBlock:
+              cidr: 1.1.1.1/32
+        ports:
+          - port: 3307
+            protocol: TCP
+  depedencies:
+    egress:
+      - to:
+          - ipBlock:
+              cidr: 1.1.1.1/32
+        ports:
+          - port: 443
+            protocol: TCP
+
+hpa:
+  app:
+    enabled: true
+    replicas:
+      min: 2
+      max: 3
+    metrics:
+      - type: Resource
+        resource:
+          name: cpu
+          target:
+            type: Utilization
+            averageUtilization: 50
+
+configMaps:
+  app: {}

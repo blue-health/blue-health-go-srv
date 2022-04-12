@@ -1,0 +1,23 @@
+{{- if .Values.ingress.enabled }}
+{{- with .Values.ingress }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: i-{{ template "project.name" $ }}
+  labels:
+    app.kubernetes.io/component: ingress
+    {{ include "project.labels" $ | nindent 4 }}
+    {{- if .labels }}
+    {{ toYaml .labels | nindent 4 }}
+    {{- end }}
+  {{- if .annotations }}
+  annotations:
+    {{ toYaml .annotations | nindent 4 }}
+  {{- end }}
+spec:
+  {{- if .rules }}
+  rules:
+    {{ toYaml .rules | nindent 4 }}
+  {{- end}}
+{{- end }}
+{{- end }}

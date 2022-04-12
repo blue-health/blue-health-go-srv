@@ -1,0 +1,25 @@
+{{- if .Values.serviceMonitor.enabled }}
+{{- with .Values.serviceMonitor }}
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: sm-{{ template "project.name" $ }}
+  labels:
+    app.kubernetes.io/component: service-monitor
+    {{ include "project.labels" $ | nindent 4 }}
+    {{- if .labels }}
+    {{ toYaml .labels | nindent 4 }}
+    {{- end }}
+  {{- if .annotations }}
+  annotations:
+    {{ toYaml .annotations | nindent 4 }}
+  {{- end }}
+spec:
+  selector:
+    matchLabels:
+      {{- toYaml .matchLabels | nindent 6 }}
+  endpoints:
+  - port: http-probe
+  {{- end }}
+{{- end }}

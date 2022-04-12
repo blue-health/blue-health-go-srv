@@ -1,0 +1,17 @@
+{{- range $name, $service := .Values.services }}
+{{- if and $service.enabled $service.frontend.enabled }}
+{{- with $service }}
+---
+apiVersion: networking.gke.io/v1beta1
+kind: FrontendConfig
+metadata:
+  name: fc-{{ template "project.name" $ }}-{{ $name }}
+  labels:
+    app.kubernetes.io/component: frontend-config
+    {{ include "project.labels" $ | nindent 4 }}
+spec:
+  redirectToHttps:
+    enabled: true
+{{- end }}
+{{- end }}
+{{- end }}

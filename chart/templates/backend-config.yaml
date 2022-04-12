@@ -1,0 +1,32 @@
+{{- range $name, $service := .Values.services }}
+{{- if and $service.enabled $service.backend.enabled }}
+{{- with $service }}
+---
+apiVersion: cloud.google.com/v1
+kind: BackendConfig
+metadata:
+  name: bc-{{ template "project.name" $ }}-{{ $name }}
+  labels:
+    app.kubernetes.io/component: backend-config
+    {{ include "project.labels" $ | nindent 4 }}
+spec:
+  timeoutSec: 45
+  healthCheck:
+    type: HTTP
+    port: {{ .http.port | default 9090 }}
+    checkIntervalSec: 15
+    requestPath: {{ .backend.healthCheck | default "/readyz" }}
+  sessionAffinity:
+    affinityType: "CLIENT_IP"
+  connectionDraining:
+    drainingTimeoutSec: 60
+  logging:
+    enable: true
+    sampleRate: 0.5
+  {{- if .backend.securityPolicy }}
+  securityPolicy:
+    name: {{ .backend.securityPolicy }}
+  {{- end }}
+{{- end }}
+{{- end }}
+{{- end }}

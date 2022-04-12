@@ -1,0 +1,17 @@
+{{- range $name, $cert := .Values.managedCertificates }}
+{{- if $cert.enabled }}
+{{- with $cert }} 
+---
+apiVersion: networking.gke.io/v1
+kind: ManagedCertificate
+metadata:
+  name: mc-{{ template "project.name" $ }}-{{ $name }}
+  labels:
+    app.kubernetes.io/component: managed-certificate
+    {{ include "project.labels" $ | nindent 4 }}
+spec:
+  domains:
+    {{ toYaml .domains | nindent 4 }}
+{{- end }}
+{{- end }}
+{{- end }}

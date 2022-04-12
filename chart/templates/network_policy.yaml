@@ -1,0 +1,27 @@
+{{- range $name, $policy := .Values.networkPolicies }}
+{{- if $policy.enabled }}
+{{- with $policy }} 
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: np-{{ template "project.name" $ }}-{{ $name }}
+  labels:
+    app.kubernetes.io/component: network-policy
+    {{ include "project.labels" $ | nindent 4 }}
+  {{- if .annotations}}
+  {{- with .annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- end }}
+spec:
+  podSelector:
+    {{ toYaml .podSelector | nindent 4 }}
+  policyTypes:
+    {{ toYaml .policyTypes | nindent 4 }}
+  egress:
+    {{ toYaml .egress | nindent 4 }}
+{{- end }}
+{{- end }}
+{{- end }}

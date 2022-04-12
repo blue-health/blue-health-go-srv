@@ -1,0 +1,44 @@
+name: CI
+
+on:
+  workflow_call:
+    inputs: {}
+    secrets: {}
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Go
+        uses: actions/setup-go@v3
+        with:
+          go-version: 1.18
+
+      - name: Load Go cache
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+
+      - name: Setup Helm
+        uses: azure/setup-helm@v2.0
+        id: install
+
+      - name: Lint
+        uses: golangci/golangci-lint-action@v3.1.0
+        with:
+          version: latest
+
+      - name: Test
+        run: make test
+
+      - name: Lint Chart
+        run: make lint-chart

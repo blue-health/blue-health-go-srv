@@ -1,0 +1,156 @@
+deployments:
+  app:
+    enabled: true
+    replicaCount: 1
+    containers:
+      app:
+        image:
+          repository: gcr.io/project/project
+          tag: latest
+        http:
+          enabled: true
+        private:
+          enabled: true
+        probe:
+          enabled: true
+        livenessProbe:
+          enabled: true
+        readinessProbe:
+          enabled: true
+        securityContext:
+          runAsNonRoot: true
+        configMap: app
+        resources:
+          requests:
+            cpu: 10m
+            memory: 10Mi
+      proxy:
+        image:
+          repository: gcr.io/cloudsql-docker/gce-proxy
+          tag: 1.29.0-alpine
+        http:
+          enabled: false
+        private:
+          enabled: false
+        probe:
+          enabled: false
+        livenessProbe:
+          enabled: false
+        readinessProbe:
+          enabled: false
+        securityContext:
+          runAsNonRoot: true
+        resources:
+          requests:
+            cpu: 20m
+            memory: 20Mi
+    strategy:
+      type: RollingUpdate
+      rollingUpdate:
+        maxUnavailable: 0
+        maxSurge: 1
+    labels:
+      networking/allow-database-egress: "true"
+      networking/allow-google-apis-egress: "true"
+      networking/allow-depedencies-egress: "true"
+      networking/allow-api-gateway-srv-egress: "true"
+
+services:
+  app:
+    enabled: true
+    type: ClusterIP
+    http:
+      enabled: true
+    private:
+      enabled: true
+    probe:
+      enabled: true
+    backend:
+      enabled: false
+    frontend:
+      enabled: false
+
+networkPolicies:
+  database:
+    enabled: true
+    podSelector:
+      matchLabels:
+        networking/allow-database-egress: "true"
+    policyTypes:
+      - Egress
+    annotations:
+      "helm.sh/hook": "pre-install,pre-upgrade"
+      "helm.sh/hook-weight": "-10"
+  redis:
+    enabled: true
+    podSelector:
+      matchLabels:
+        networking/allow-redis-egress: "true"
+    policyTypes:
+      - Egress
+  depedencies:
+    enabled: true
+    podSelector:
+      matchLabels:
+        networking/allow-depedencies-egress: "true"
+    policyTypes:
+      - Egress
+
+migrations:
+  enabled: true
+  containers:
+    migrate:
+      image:
+        repository: gcr.io/project/project
+        tag: latest
+      volumeMounts:
+        - name: lifecycle
+          mountPath: /lifecycle
+      securityContext:
+        runAsNonRoot: true
+    proxy:
+      image:
+        repository: gcr.io/cloudsql-docker/gce-proxy
+        tag: 1.29.0-alpine
+      volumeMounts:
+        - name: lifecycle
+          mountPath: /lifecycle
+          readOnly: true
+      command: ["/bin/sh", "-c"]
+      securityContext:
+        runAsNonRoot: true
+  configMap: app-init
+  volumes:
+    - name: lifecycle
+      emptyDir: {}
+  labels:
+    networking/allow-database-egress: "true"
+    networking/allow-google-apis-egress: "true"
+
+serviceMonitor:
+  enabled: false
+  labels:
+    release: kube-prometheus-stack
+  matchLabels:
+    service: svc-blue-health-go-srv-app
+
+prometheusRules:
+  enabled: false
+  labels:
+    role: alert-rules
+    release: kube-prometheus-stack
+    prometheus: kube-prometheus-stack-prometheus
+  groups: []
+
+grafana:
+  enabled: false
+
+ingress:
+  enabled: false
+
+configMaps:
+  app: {}
+  app-init:
+    BLUE_HEALTH_GO_SRV_MIGRATE_TOUCH_FILE: /lifecycle/main-terminated
+
+secrets: {}

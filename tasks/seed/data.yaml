@@ -1,0 +1,231 @@
+identities:
+  - id: 04529f23-6154-4333-882a-5d5822c97aff
+    state: active
+    email: pharmacy.group@blue.health
+    groups: [iam.organizations@blue.health]
+    credentials: []
+    addresses: []
+  - id: 3d10db9c-dcbb-481a-9705-4ec408ab8bab
+    parent_id: 04529f23-6154-4333-882a-5d5822c97aff
+    state: active
+    email: pharmacy.one@blue.health
+    groups:
+      - iam.users@blue.health
+      - pharmacies@blue.health
+    credentials:
+      - id: 3aa113e5-340a-45b6-bc77-aa8b1b761e45
+        kind: password
+        password_hash: $argon2id$v=19$m=65536,t=3,p=2$jRLoWDeKm7jn1ayDoCzOUQ$ygpY5ljj68YhukJsZVRdLytpZWR5dzkM3FkbMeRxqPM
+      - id: 4b2a80ed-5e3a-49c4-a96b-b67d47552896
+        kind: other
+        provider: immunkarte
+        subject: 6dd3ea99-580c-4d27-8395-7071999432f6
+      - id: 09dcaf82-9dee-4710-ae46-47f740aabe38
+        kind: oidc
+        provider: nconnect
+        subject: APO-1234
+    addresses:
+      - id: c3a70a74-b2dd-43a2-981e-7998660a3c5b
+        kind: email
+        value: marcin.praski@live.com
+        verified: true
+      - id: 14a0da8d-72a2-4c64-acf5-a2c55d1af84d
+        kind: phone
+        value: "+48792639899"
+        verified: true
+      - id: d574128c-7bdc-4db2-84b2-ee726db92303
+        kind: fax
+        value: "+44258123456"
+        verified: true
+    data:
+      personal:
+        name: Marcin Praski
+        first_name: Marcin
+        last_name: Praski
+        birth_date: "2022-04-05T16:29:07.095569Z"
+      address:
+        name: Marcin Praski
+        street: Soldiner Strasse
+        street_number: "18"
+        post_code: "13359"
+        city: Berlin
+        country: DE
+      billing:
+        iban: DE75512108001245126199
+        bank: N26
+        account_owner: Marcin Praski
+      business:
+        owner: Marcin Praski
+        website: https://mpraski.com
+        vat_number: DE123456789
+    settings:
+      account: {}
+      products:
+        immunkarte:
+          enabled: true
+        blue-loyalty:
+          enabled: true
+  - id: 122d17f9-b019-49f2-9f9d-53d05d34d7a1
+    parent_id: 04529f23-6154-4333-882a-5d5822c97aff
+    state: active
+    email: pharmacy.two@blue.health
+    groups:
+      - iam.users@blue.health
+      - pharmacies@blue.health
+    credentials:
+      - id: f0a70b9f-f47d-43f9-81d5-450ec4e03a4d
+        kind: password
+        password_hash: $argon2id$v=19$m=65536,t=3,p=2$jRLoWDeKm7jn1ayDoCzOUQ$ygpY5ljj68YhukJsZVRdLytpZWR5dzkM3FkbMeRxqPM
+      - id: 6c431af5-fdae-45d0-a5b4-bb4835f9ba0b
+        kind: oidc
+        provider: nconnect
+        subject: APO-1235
+    addresses:
+      - id: 9387dee8-5ed6-4f34-adc9-c9c739a2aba0
+        kind: email
+        value: jim.morrison@live.com
+        verified: true
+      - id: c6010458-b71e-42ee-a6a1-052e519307a3
+        kind: phone
+        value: "+49323123123"
+        verified: true
+      - id: 03fcdc15-584a-4293-8e8e-a7a36f5e6125
+        kind: fax
+        value: "+44208123856"
+        verified: true
+    data:
+      personal:
+        name: Jim Morrison
+        first_name: Jim
+        last_name: Morrison
+        birth_date: "2022-04-05T16:29:07.095569Z"
+      address:
+        name: Jim Morrison
+        street: 5th Ave
+        street_number: "150"
+        post_code: "32904"
+        city: Melbourne
+        country: DE
+      billing:
+        iban: DE75512108001245126199
+        bank: N26
+        account_owner: Jim Morrison
+      business:
+        owner: Jim Morrison
+        website: https://doors.com
+        vat_number: DE123456789
+    settings:
+      account: {}
+      products:
+        immunkarte:
+          enabled: true
+        blue-loyalty:
+          enabled: true
+  - id: efa5403e-ead0-48cb-b7c8-542afbe87521
+    state: active
+    email: ngda.testing.group@blue.health
+    groups: [iam.organizations@blue.health]
+    credentials: []
+    addresses: []
+  - id: ed3f796b-eba4-4539-a079-644042be3441
+    parent_id: efa5403e-ead0-48cb-b7c8-542afbe87521
+    state: active
+    email: ngda.pharmacy.one@blue.health
+    groups:
+      - iam.users@blue.health
+      - pharmacies@blue.health
+    credentials:
+      - id: 10d11003-11f8-45dd-9c6c-1dd290c706f4
+        kind: password
+        password_hash: $argon2id$v=19$m=65536,t=3,p=2$jRLoWDeKm7jn1ayDoCzOUQ$ygpY5ljj68YhukJsZVRdLytpZWR5dzkM3FkbMeRxqPM
+      - id: 289c38d9-756d-4a7f-b4a8-f7b52bbfd3fc
+        kind: oidc
+        provider: nconnect
+        subject: APO9019004
+    addresses:
+      - id: acbbe73c-c862-4eec-9382-4e465b84f850
+        kind: email
+        value: ngda.pharmacy.one@blue.health
+        verified: true
+      - id: 0bf130f2-1d66-4071-b7b7-b8ca853e3653
+        kind: phone
+        value: "+49123123123"
+        verified: true
+      - id: cf7aac1b-22a4-448f-862b-57b8b84af6ae
+        kind: fax
+        value: "+49123123100"
+        verified: true
+    data:
+      personal:
+        name: NGDA Pharmacy One
+      address:
+        name: NGDA Pharmacy One
+        street: Immun Straße
+        street_number: "18"
+        post_code: "12345"
+        city: Berlin
+        country: DE
+      billing:
+        iban: DE75512108001245126199
+        bank: N26
+        account_owner: Hans Immun
+      business:
+        owner: Hans Immun
+        website: https://blue.health
+        vat_number: DE123456789
+    settings:
+      account: {}
+      products:
+        blue-loyalty:
+          enabled: true
+  - id: a3234151-bf5b-4f69-b942-cb431d7cd040
+    parent_id: efa5403e-ead0-48cb-b7c8-542afbe87521
+    state: active
+    email: ngda.pharmacy.two@blue.health
+    groups:
+      - iam.users@blue.health
+      - pharmacies@blue.health
+    credentials:
+      - id: 4a566eef-2a26-41e1-b60e-67312f05c24f
+        kind: password
+        password_hash: $argon2id$v=19$m=65536,t=3,p=2$jRLoWDeKm7jn1ayDoCzOUQ$ygpY5ljj68YhukJsZVRdLytpZWR5dzkM3FkbMeRxqPM
+      - id: f920408b-5066-4b0e-91f1-30c658138a6d
+        kind: oidc
+        provider: nconnect
+        subject: APO9019025
+    addresses:
+      - id: 5c16882a-4c39-46ef-a3b1-d634e2a08999
+        kind: email
+        value: ngda.pharmacy.two@blue.health
+        verified: true
+      - id: 768494e6-9d7e-4d12-9d7b-02a3b07586e1
+        kind: phone
+        value: "+49123123124"
+        verified: true
+      - id: 9905e41d-a92e-4533-85c1-8f68e154d9bc
+        kind: fax
+        value: "+49123123101"
+        verified: true
+    data:
+      personal:
+        name: NGDA Pharmacy Two
+      address:
+        name: NGDA Pharmacy Two
+        street: Immun Straße
+        street_number: "18"
+        post_code: "12345"
+        city: Berlin
+        country: DE
+      billing:
+        iban: DE75512108001245126199
+        bank: N26
+        account_owner: Hans Immun
+      business:
+        owner: Hans Immun
+        website: https://blue.health
+        vat_number: DE123456789
+    settings:
+      account: {}
+      products:
+        blue-loyalty:
+          enabled: true

@@ -1,0 +1,128 @@
+name: CD
+
+on:
+  workflow_call:
+    inputs:
+      app:
+        required: true
+        type: string
+      namespace:
+        required: true
+        type: string
+      env_suffix:
+        required: true
+        type: string
+    secrets:
+      artifact_region:
+        required: true
+      cluster:
+        required: true
+      cluster_zone:
+        required: true
+      cluster_project_id:
+        required: true
+      cluster_artifact_repo:
+        required: true
+      network_project_id:
+        required: true
+      network_bastion:
+        required: true
+      network_bastion_zone:
+        required: true
+      workload_identity_provider:
+        required: true
+      workload_identity_service_account:
+        required: true
+      additional_values:
+        required: false
+
+env:
+  APP: ${{ inputs.app }}
+  NAMESPACE: ${{ inputs.namespace }}
+  ENV_SUFFIX: ${{ inputs.env_suffix }}
+  REGISTRY: ${{ secrets.artifact_region }}-docker.pkg.dev
+  REPOSITORY: ${{ secrets.artifact_region }}-docker.pkg.dev/${{ secrets.cluster_project_id }}/${{ secrets.cluster_artifact_repo }}/${{ inputs.app }}
+  REPOSITORY_MIGRATION: ${{ secrets.artifact_region }}-docker.pkg.dev/${{ secrets.cluster_project_id }}/${{ secrets.cluster_artifact_repo }}/${{ inputs.app }}-migrations
+  BASTION: ${{ secrets.network_bastion }}
+  BASTION_ZONE: ${{ secrets.network_bastion_zone }}
+  BASTION_PROJECT: ${{ secrets.network_project_id }}
+  CLUSTER: ${{ secrets.cluster }}
+  CLUSTER_ZONE: ${{ secrets.cluster_zone }}
+  CLUSTER_PROJECT: ${{ secrets.cluster_project_id }}
+
+jobs:
+  publish:
+    name: Publish
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: "read"
+      id-token: "write"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Write Values File
+        run: echo "$ADDITIONAL_VALUES" >> additional.yaml
+        env:
+          ADDITIONAL_VALUES: ${{ secrets.additional_values }}
+
+      - name: Setup Helm
+        uses: azure/setup-helm@v2.0
+
+      - name: Authenticate with Google Cloud
+        uses: "google-github-actions/auth@v0"
+        with:
+          service_account: ${{ secrets.WORKLOAD_IDENTITY_SERVICE_ACCOUNT }}
+          workload_identity_provider: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER }}
+
+      - name: Configure Google Cloud
+        uses: google-github-actions/setup-gcloud@v0
+
+      - name: Configure Docker
+        run: gcloud auth configure-docker $REGISTRY
+
+      - name: Build
+        run: docker build --tag $REPOSITORY:$GITHUB_SHA .
+
+      - name: Build Migration
+        run: docker build --tag $REPOSITORY_MIGRATION:$GITHUB_SHA --file tasks/migrate/Dockerfile .
+
+      - name: Publish
+        run: docker push $REPOSITORY:$GITHUB_SHA
+
+      - name: Publish Migration
+        run: docker push $REPOSITORY_MIGRATION:$GITHUB_SHA
+
+      - name: Configure Kubernetes
+        run: |-
+          gcloud container clusters get-credentials \
+            --project $CLUSTER_PROJECT \
+            --zone $CLUSTER_ZONE \
+            --internal-ip $CLUSTER
+
+      - name: Open IAP tunnel to Bastion
+        run: |-
+          for i in $(gcloud compute os-login ssh-keys list | grep -v FINGERPRINT); do \
+            gcloud compute os-login ssh-keys remove --key $i; \
+          done; \
+          gcloud compute ssh $BASTION \
+            --tunnel-through-iap \
+            --strict-host-key-checking no \
+            --project $BASTION_PROJECT \
+            --zone $BASTION_ZONE \
+            -- -L 8888:127.0.0.1:8888 -N -q -f
+
+      - name: Deploy Helm Chart
+        run: |-
+          HTTPS_PROXY=localhost:8888 helm upgrade \
+            --install --atomic --wait --namespace=$NAMESPACE \
+            --set=app.name=$APP --set=app.version=$GITHUB_SHA \
+            --set=deployments.app.containers.app.image.repository=$REPOSITORY \
+            --set=deployments.app.containers.app.image.tag=$GITHUB_SHA \
+            --set=migrations.containers.migrate.image.repository=$REPOSITORY_MIGRATION \
+            --set=migrations.containers.migrate.image.tag=$GITHUB_SHA \
+            --values=./chart/values.yaml --values=./chart/values-$ENV_SUFFIX.yaml \
+            --values=additional.yaml \
+            $APP ./chart

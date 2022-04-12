@@ -1,0 +1,49 @@
+{{- range $name, $service := .Values.services }}
+{{- if $service.enabled }}
+{{- with $service }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: svc-{{ template "project.name" $ }}-{{ $name }}
+  labels:
+    app.kubernetes.io/tier: service
+    app.kubernetes.io/component: service
+    service: {{ template "project.name" $ }}-{{ $name }}
+    {{ include "project.labels" $ | nindent 4 }}
+    {{- if .labels }}
+    {{ toYaml .labels | nindent 4 }}
+    {{- end }}
+  {{- if .annotations}}
+  {{- with .annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- end }}
+spec:
+  type: {{ .type | default "ClusterIP"}}
+  ports:
+    {{- if .http.enabled }}
+    - port: {{ .http.port | default 80 }}
+      targetPort: {{ .http.targetPort | default "http" }}
+      protocol: TCP
+      name: http
+    {{- end }}
+    {{- if .private.enabled }}
+    - port: {{ .private.port | default 8081 }}
+      targetPort: {{ .private.targetPort | default "http-private" }}
+      protocol: TCP
+      name: http-private
+    {{- end }}
+    {{- if .probe.enabled }}
+    - port: {{ .probe.port | default 9090 }}
+      targetPort: {{ .probe.targetPort | default "http-probe" }}
+      protocol: TCP
+      name: http-probe
+    {{- end }}
+  selector:
+    app: {{ template "project.name" $ }}-{{ $name }}
+    release: {{ $.Release.Name }}
+{{- end }}
+{{- end }}
+{{- end }}
