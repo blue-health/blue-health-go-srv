@@ -1,1 +1,1 @@
-drop table if exists cards;
+-- Tables down

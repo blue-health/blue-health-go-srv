@@ -2,6 +2,7 @@ package main
 
 import (
 	"embed"
+	"fmt"
 	"os"
 	"time"
 
@@ -14,9 +15,9 @@ import (
 	"github.com/golang-migrate/migrate/v4/source/iofs"
 )
 
-type input struct {
-	Delay     time.Duration `split_words:"true" default:"3s"`
-	TouchFile string        `split_words:"true" default:""`
+type config struct {
+	Delay     time.Duration `default:"2s"`
+	TouchFile string        `split_words:"true"`
 	Database  struct {
 		DSN string `required:"true"`
 	}
@@ -34,32 +35,42 @@ func init() {
 }
 
 func main() {
-	var i input
-	if err := envconfig.Process(app, &i); err != nil {
-		log.Fatalf("failed to load input: %v", err)
+	var cfg config
+	if err := envconfig.Process(app, &cfg); err != nil {
+		log.Fatalf("failed to load config: %v", err)
+	}
+
+	time.Sleep(cfg.Delay)
+
+	if err := run(&cfg); err != nil {
+		log.Fatalf("failed to migrate: %v", err)
+	}
+}
+
+func run(cfg *config) error {
+	if cfg.TouchFile != "" {
+		defer func() {
+			if err := touch(cfg.TouchFile); err != nil {
+				log.Errorf("failed to touch file: %v", err)
+			}
+		}()
 	}
 
 	d, err := iofs.New(migrationsFs, "sql")
 	if err != nil {
-		log.Fatalf("failed to create iofs: %v", err)
+		return fmt.Errorf("failed to create iofs: %w", err)
 	}
 
-	time.Sleep(i.Delay)
-
-	m, err := migrate.NewWithSourceInstance("iofs", d, i.Database.DSN)
+	m, err := migrate.NewWithSourceInstance("iofs", d, cfg.Database.DSN)
 	if err != nil {
-		log.Fatalf("failed to create migration source: %v", err)
+		return fmt.Errorf("failed to create migration source: %w", err)
 	}
 
 	if err = m.Up(); err != nil && err != migrate.ErrNoChange {
-		log.Fatalf("failed to migrate: %v", err)
+		return fmt.Errorf("failed to migrate: %w", err)
 	}
 
-	if i.TouchFile != "" {
-		if err := touch(i.TouchFile); err != nil {
-			log.Fatalf("failed to touch file: %v", err)
-		}
-	}
+	return nil
 }
 
 func touch(name string) error {

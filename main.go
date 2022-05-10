@@ -22,10 +22,10 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-type input struct {
-	Debug   bool `default:"false"`
-	Servers struct {
-		Addresses struct {
+type config struct {
+	Debug  bool `default:"false"`
+	Server struct {
+		Address struct {
 			Public        string `default:":8080"`
 			Private       string `default:":8081"`
 			Observability string `default:":9090"`
@@ -36,7 +36,7 @@ type input struct {
 		ShutdownTimeout time.Duration `split_words:"true" default:"30s"`
 		RequestTimeout  time.Duration `split_words:"true" default:"45s"`
 	}
-	Secrets struct {
+	Secret struct {
 		RedisKey          string `split_words:"true" required:"true"`
 		RedisCertificate  string `split_words:"true"`
 		DatabaseKey       string `split_words:"true" required:"true"`
@@ -69,33 +69,38 @@ func init() {
 func main() {
 	ctx := context.Background()
 
-	var i input
-	if err := envconfig.Process(app, &i); err != nil {
-		log.Fatalf("failed to load input: %v", err)
+	var cfg config
+	if err := envconfig.Process(app, &cfg); err != nil {
+		log.Fatalf("failed to load config: %v", err)
 	}
 
 	time.Sleep(time.Second)
 
-	db, err := storage.NewPostgres(ctx, i.Database.DSN)
+	if err := run(ctx, &cfg); err != nil {
+		log.Fatalf("failed to run app: %v", err)
+	}
+}
+
+func run(ctx context.Context, cfg *config) error {
+	db, err := storage.NewPostgres(ctx, cfg.Database.DSN)
 	if err != nil {
-		log.Fatalf("failed to connect to database: %v", err)
+		return fmt.Errorf("failed to connect to database: %w", err)
 	}
 
 	defer func() {
 		if err = db.Close(); err != nil {
-			log.Fatalf("failed to close the database: %v", err)
+			log.Errorf("failed to close the database: %v", err)
 		}
 	}()
 
 	var secretSource secret.Source
 
-	if i.Debug {
+	if cfg.Debug {
 		secretSource = secret.NewEnvSource()
 	} else {
-		gsm, gerr := secret.NewGoogleSecretManager(ctx, i.Project.ID)
+		gsm, gerr := secret.NewGoogleSecretManager(ctx, cfg.Project.ID)
 		if gerr != nil {
-			//nolint:gocritic //begone
-			log.Fatalf("failed to connect to gsm: %v", gerr)
+			return fmt.Errorf("failed to connect to gsm: %w", gerr)
 		}
 
 		defer gsm.Close()
@@ -107,7 +112,7 @@ func main() {
 
 	checks, err := newHealthChecks(db)
 	if err != nil {
-		log.Fatalf("failed to setup healthz: %v", err)
+		return fmt.Errorf("failed to setup healthz: %w", err)
 	}
 
 	var (
@@ -119,9 +124,9 @@ func main() {
 	warm.Add(3)
 
 	var (
-		publicServer        = newServer(&i, i.Servers.Addresses.Public, func(m chi.Router) {})
-		privateServer       = newServer(&i, i.Servers.Addresses.Private, func(m chi.Router) {})
-		observabilityServer = newServer(&i, i.Servers.Addresses.Observability, func(m chi.Router) {
+		publicServer        = newServer(cfg, cfg.Server.Address.Public, func(m chi.Router) {})
+		privateServer       = newServer(cfg, cfg.Server.Address.Private, func(m chi.Router) {})
+		observabilityServer = newServer(cfg, cfg.Server.Address.Observability, func(m chi.Router) {
 			m.Mount("/livez", checks[0])
 			m.Mount("/readyz", checks[1])
 		})
@@ -143,23 +148,22 @@ func main() {
 
 	go func() {
 		<-quit
+
 		log.Println("server is shutting down...")
 		atomic.StoreInt32(&healthy, 0)
 
-		var cancel context.CancelFunc
-
-		ctx, cancel = context.WithTimeout(ctx, i.Servers.ShutdownTimeout)
+		c, cancel := context.WithTimeout(ctx, cfg.Server.ShutdownTimeout)
 		defer cancel()
 
 		publicServer.SetKeepAlivesEnabled(false)
 		privateServer.SetKeepAlivesEnabled(false)
 		observabilityServer.SetKeepAlivesEnabled(false)
 
-		if err := publicServer.Shutdown(ctx); err != nil {
+		if err := publicServer.Shutdown(c); err != nil {
 			log.Fatalf("failed to gracefully shutdown public server: %v", err)
 		}
 
-		if err := privateServer.Shutdown(ctx); err != nil {
+		if err := privateServer.Shutdown(c); err != nil {
 			log.Fatalf("failed to gracefully shutdown private server: %v", err)
 		}
 
@@ -177,6 +181,8 @@ func main() {
 	<-done
 
 	log.Println("server stopped")
+
+	return nil
 }
 
 const maxGoroutines = 1000
@@ -235,20 +241,20 @@ func newHealthChecks(db *sqlx.DB) ([2]http.Handler, error) {
 	return [2]http.Handler{l.Handler(), r.Handler()}, nil
 }
 
-func newServer(cfg *input, address string, f func(chi.Router)) *http.Server {
+func newServer(cfg *config, address string, f func(chi.Router)) *http.Server {
 	r := chi.NewRouter()
 
 	r.Use(middleware.RealIP)
 	r.Use(middleware.Recoverer)
-	r.Use(middleware.Timeout(cfg.Servers.RequestTimeout))
+	r.Use(middleware.Timeout(cfg.Server.RequestTimeout))
 
 	f(r)
 
 	return &http.Server{
 		Addr:         address,
-		ReadTimeout:  cfg.Servers.ReadTimeout,
-		WriteTimeout: cfg.Servers.WriteTimeout,
-		IdleTimeout:  cfg.Servers.IdleTimeout,
+		ReadTimeout:  cfg.Server.ReadTimeout,
+		WriteTimeout: cfg.Server.WriteTimeout,
+		IdleTimeout:  cfg.Server.IdleTimeout,
 		Handler:      r,
 	}
 }
