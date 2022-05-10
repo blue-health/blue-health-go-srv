@@ -8,7 +8,7 @@ require (
 	github.com/go-chi/chi v4.1.2+incompatible
 	github.com/go-chi/chi/v5 v5.0.7
 	github.com/go-playground/validator/v10 v10.10.1
-	github.com/golang-migrate/migrate/v4 v4.15.1
+	github.com/golang-migrate/migrate/v4 v4.15.2
 	github.com/google/uuid v1.3.0
 	github.com/hellofresh/health-go/v4 v4.5.0
 	github.com/jmoiron/sqlx v1.3.5
