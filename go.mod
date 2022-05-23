@@ -10,10 +10,10 @@ require (
 	github.com/go-playground/validator/v10 v10.10.1
 	github.com/golang-migrate/migrate/v4 v4.15.1
 	github.com/google/uuid v1.3.0
-	github.com/hellofresh/health-go/v4 v4.5.0
+	github.com/hellofresh/health-go/v4 v4.6.0
 	github.com/jmoiron/sqlx v1.3.5
 	github.com/kelseyhightower/envconfig v1.4.0
-	github.com/lib/pq v1.10.5
+	github.com/lib/pq v1.10.6
 	github.com/sirupsen/logrus v1.8.1
 	google.golang.org/genproto v0.0.0-20220505152158-f39f71e6c8f3
 	gopkg.in/yaml.v2 v2.4.0
@@ -38,10 +38,10 @@ require (
 	go.opentelemetry.io/otel v1.7.0 // indirect
 	go.opentelemetry.io/otel/trace v1.7.0 // indirect
 	go.uber.org/atomic v1.9.0 // indirect
-	golang.org/x/crypto v0.0.0-20220408190544-5352b0902921 // indirect
-	golang.org/x/net v0.0.0-20220425223048-2871e0cb64e4 // indirect
+	golang.org/x/crypto v0.0.0-20220518034528-6f7dac969898 // indirect
+	golang.org/x/net v0.0.0-20220520000938-2e3eb7b945c2 // indirect
 	golang.org/x/oauth2 v0.0.0-20220411215720-9780585627b5 // indirect
-	golang.org/x/sys v0.0.0-20220503163025-988cb79eb6c6 // indirect
+	golang.org/x/sys v0.0.0-20220513210249-45d2b4557a2a // indirect
 	golang.org/x/text v0.3.7 // indirect
 	google.golang.org/api v0.78.0 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
