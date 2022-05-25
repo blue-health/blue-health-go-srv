@@ -1,0 +1,109 @@
+{{- range $name, $cronjob := .Values.cronJobs }}
+{{- if $cronjob.enabled }}
+{{- with $cronjob }}
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: cj-{{ template "project.name" $ }}-{{ $name }}
+  labels:
+    app.kubernetes.io/tier: cronjob
+    {{- include "project.labels" $ | nindent 4 }}
+    {{- if .labels }}
+    {{ toYaml .labels | nindent 4 }}
+    {{- end }}
+  {{- if .annotations}}
+  {{- with .annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- end }}
+spec:
+  schedule: {{ .job.schedule | quote }}
+  concurrencyPolicy: {{ .job.concurrencyPolicy | default "Forbid" }}
+  successfulJobsHistoryLimit: {{ .job.successfulJobsHistoryLimit | default 1 }}
+  failedJobsHistoryLimit: {{ .job.failedJobsHistoryLimit | default 1 }}
+  jobTemplate:
+    spec:
+      backoffLimit: {{ .job.backoffLimit | default 1 }}
+      template:
+        metadata:
+          labels:
+            app: {{ template "project.name" $ }}-{{ $name }}
+            release: {{ $.Release.Name }}
+            cron: cj-{{ template "project.name" $ }}-{{ $name }}
+            {{- if .labels }}
+            {{ toYaml .labels | nindent 12 }}
+            {{- end }}
+          {{- if .annotations}}
+          {{- with .annotations }}
+          annotations:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- end }}
+        spec:
+          {{- if .volumes }}
+          {{- with .volumes }}
+          volumes:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- end }}
+          serviceAccountName: {{ $.Values.serviceAccount }}
+          containers:
+          {{- range $name, $container := .containers }}
+          {{- with $container }}
+          - name: {{ $name }}
+            image: {{ .image.repository }}:{{ .image.tag }}
+            imagePullPolicy: {{ .image.pullPolicy | default "Always" }}
+            {{- if .command }}
+            {{- with .command }}
+            command:
+              {{- toYaml . | nindent 14 }}
+            {{- end}}
+            {{- end}}
+            {{- if .args }}
+            {{- with .args }}
+            args:
+              {{- toYaml . | nindent 14 }}
+            {{- end}}
+            {{- end}}
+            {{- if or (.configMap) ($.Values.secrets) }}
+            envFrom:
+            {{- if .configMap }}
+              - configMapRef:
+                  name: cm-{{ template "project.name" $ }}-{{ kebabcase .configMap }}
+            {{- end }}
+            {{- if $.Values.secrets }}
+              - secretRef:
+                  name: s-{{ template "project.name" $ }}
+            {{- end }}
+            {{- end }}
+            env:
+              - name: KUBERNETES_NODE_IP
+                valueFrom:
+                  fieldRef:
+                    fieldPath: status.hostIP
+            {{- if .volumeMounts }}
+            {{- with .volumeMounts }}
+            volumeMounts:
+              {{- toYaml . | nindent 14 }}
+            {{- end }}
+            {{- end }}
+            {{- if .resources }}
+            {{- with .resources }}
+            resources:
+              {{- toYaml . | nindent 14 }}
+            {{- end }}
+            {{- end }}
+          {{- end }}
+          {{- end }}
+          restartPolicy: {{ .restartPolicy | default "OnFailure" }}
+          {{- if .nodeSelector }}
+          {{- with .nodeSelector }}
+          nodeSelector:
+            {{ toYaml . | nindent 12 }}
+          {{- end }}
+          {{- end }}
+{{- end }}
+{{- end }}
+{{- end }}

@@ -119,7 +119,7 @@ migrations:
       command: ["/bin/sh", "-c"]
       securityContext:
         runAsNonRoot: true
-  configMap: app-init
+  configMap: appInit
   volumes:
     - name: lifecycle
       emptyDir: {}
@@ -150,7 +150,7 @@ ingress:
 
 configMaps:
   app: {}
-  app-init:
+  appInit:
     BLUE_HEALTH_GO_SRV_MIGRATE_TOUCH_FILE: /lifecycle/main-terminated
 
 secrets: {}

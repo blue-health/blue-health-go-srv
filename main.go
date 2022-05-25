@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net"
 	"net/http"
 	"os"
 	"os/signal"
@@ -23,17 +24,19 @@ import (
 )
 
 type config struct {
-	Debug  bool `default:"false"`
+	Debug  bool          `default:"false"`
+	Delay  time.Duration `default:"1s"`
 	Server struct {
 		Address struct {
 			Public        string `default:":8080"`
 			Private       string `default:":8081"`
 			Observability string `default:":9090"`
 		}
-		ReadTimeout     time.Duration `split_words:"true" default:"5s"`
+		ReadTimeout     time.Duration `split_words:"true" default:"10s"`
 		WriteTimeout    time.Duration `split_words:"true" default:"10s"`
-		IdleTimeout     time.Duration `split_words:"true" default:"15s"`
-		ShutdownTimeout time.Duration `split_words:"true" default:"30s"`
+		IdleTimeout     time.Duration `split_words:"true" default:"30s"`
+		ReadyTimeout    time.Duration `split_words:"true" default:"10s"`
+		ShutdownTimeout time.Duration `split_words:"true" default:"15s"`
 		RequestTimeout  time.Duration `split_words:"true" default:"45s"`
 	}
 	Secret struct {
@@ -54,7 +57,7 @@ type config struct {
 }
 
 var (
-	healthy              int32
+	ready                int32
 	app                  = "blue_health_go_srv"
 	errShutdown          = errors.New("shutdown in progress")
 	errTooManyGoroutines = errors.New("too many goroutines")
@@ -74,7 +77,7 @@ func main() {
 		log.Fatalf("failed to load config: %v", err)
 	}
 
-	time.Sleep(time.Second)
+	time.Sleep(cfg.Delay)
 
 	if err := run(ctx, &cfg); err != nil {
 		log.Fatalf("failed to run app: %v", err)
@@ -124,9 +127,9 @@ func run(ctx context.Context, cfg *config) error {
 	warm.Add(3)
 
 	var (
-		publicServer        = newServer(cfg, cfg.Server.Address.Public, func(m chi.Router) {})
-		privateServer       = newServer(cfg, cfg.Server.Address.Private, func(m chi.Router) {})
-		observabilityServer = newServer(cfg, cfg.Server.Address.Observability, func(m chi.Router) {
+		publicServer        = newServer(ctx, cfg, cfg.Server.Address.Public, func(m chi.Router) {})
+		privateServer       = newServer(ctx, cfg, cfg.Server.Address.Private, func(m chi.Router) {})
+		observabilityServer = newServer(ctx, cfg, cfg.Server.Address.Observability, func(m chi.Router) {
 			m.Mount("/livez", checks[0])
 			m.Mount("/readyz", checks[1])
 		})
@@ -150,14 +153,16 @@ func run(ctx context.Context, cfg *config) error {
 		<-quit
 
 		log.Println("server is shutting down...")
-		atomic.StoreInt32(&healthy, 0)
-
-		c, cancel := context.WithTimeout(ctx, cfg.Server.ShutdownTimeout)
-		defer cancel()
+		atomic.StoreInt32(&ready, 0)
 
 		publicServer.SetKeepAlivesEnabled(false)
 		privateServer.SetKeepAlivesEnabled(false)
 		observabilityServer.SetKeepAlivesEnabled(false)
+
+		time.Sleep(cfg.Server.ReadyTimeout)
+
+		c, cancel := context.WithTimeout(ctx, cfg.Server.ShutdownTimeout)
+		defer cancel()
 
 		if err := publicServer.Shutdown(c); err != nil {
 			log.Fatalf("failed to gracefully shutdown public server: %v", err)
@@ -176,7 +181,7 @@ func run(ctx context.Context, cfg *config) error {
 
 	warm.Wait()
 
-	atomic.StoreInt32(&healthy, 1)
+	atomic.StoreInt32(&ready, 1)
 
 	<-done
 
@@ -192,7 +197,7 @@ func newHealthChecks(db *sqlx.DB) ([2]http.Handler, error) {
 		health.Config{
 			Name:    "goroutine",
 			Timeout: time.Second * 5,
-			Check: func(ctx context.Context) error {
+			Check: func(_ context.Context) error {
 				if runtime.NumGoroutine() > maxGoroutines {
 					return errTooManyGoroutines
 				}
@@ -200,6 +205,20 @@ func newHealthChecks(db *sqlx.DB) ([2]http.Handler, error) {
 				return nil
 			},
 		},
+		health.Config{
+			Name:    "database",
+			Timeout: time.Second * 5,
+			Check: func(ctx context.Context) error {
+				if errp := db.PingContext(ctx); errp != nil {
+					return errp
+				}
+
+				if _, erre := db.ExecContext(ctx, `select version()`); erre != nil {
+					return erre
+				}
+
+				return nil
+			}},
 	))
 
 	if err != nil {
@@ -208,24 +227,10 @@ func newHealthChecks(db *sqlx.DB) ([2]http.Handler, error) {
 
 	r, err := health.New(health.WithChecks(
 		health.Config{
-			Name:    "database",
-			Timeout: time.Second * 5,
-			Check: func(ctx context.Context) error {
-				if errp := db.PingContext(ctx); errp != nil {
-					return err
-				}
-
-				if _, erre := db.ExecContext(ctx, `select version()`); err != nil {
-					return erre
-				}
-
-				return nil
-			}},
-		health.Config{
 			Name:    "shutdown",
 			Timeout: time.Second,
-			Check: func(ctx context.Context) error {
-				if atomic.LoadInt32(&healthy) == 0 {
+			Check: func(_ context.Context) error {
+				if atomic.LoadInt32(&ready) == 0 {
 					return errShutdown
 				}
 
@@ -241,7 +246,7 @@ func newHealthChecks(db *sqlx.DB) ([2]http.Handler, error) {
 	return [2]http.Handler{l.Handler(), r.Handler()}, nil
 }
 
-func newServer(cfg *config, address string, f func(chi.Router)) *http.Server {
+func newServer(ctx context.Context, cfg *config, address string, f func(chi.Router)) *http.Server {
 	r := chi.NewRouter()
 
 	r.Use(middleware.RealIP)
@@ -256,5 +261,8 @@ func newServer(cfg *config, address string, f func(chi.Router)) *http.Server {
 		WriteTimeout: cfg.Server.WriteTimeout,
 		IdleTimeout:  cfg.Server.IdleTimeout,
 		Handler:      r,
+		BaseContext: func(net.Listener) context.Context {
+			return ctx
+		},
 	}
 }

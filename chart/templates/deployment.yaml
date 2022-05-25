@@ -76,7 +76,7 @@ spec:
         envFrom:
         {{- if .configMap }}
           - configMapRef:
-              name: cm-{{ template "project.name" $ }}-{{ .configMap }}
+              name: cm-{{ template "project.name" $ }}-{{ kebabcase .configMap }}
         {{- end }}
         {{- if $.Values.secrets }}
           - secretRef:

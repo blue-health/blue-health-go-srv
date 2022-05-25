@@ -36,9 +36,8 @@ format:
 
 lint-chart:
 	@echo "$(OK_COLOR)==> Linting helm chart of $(SERVICE_NAME)... $(NO_COLOR)"
-	@helm lint -f ./chart/values.yaml -f ./chart/values-develop.yaml ./chart
 	@helm lint -f ./chart/values.yaml -f ./chart/values-staging.yaml ./chart
 
 render-chart:
 	@echo "$(OK_COLOR)==> Rendering helm chart of $(SERVICE_NAME)... $(NO_COLOR)"
-	@helm template --output-dir=.chart.rendered -f ./chart/values.yaml -f ./chart/values-develop.yaml ./chart
+	@helm template --output-dir=.chart.rendered -f ./chart/values.yaml -f ./chart/values-staging.yaml ./chart
