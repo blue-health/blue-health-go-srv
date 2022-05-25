@@ -24,7 +24,7 @@ import (
 )
 
 type config struct {
-	Debug  bool          `default:"false"`
+	Debug  bool
 	Delay  time.Duration `default:"1s"`
 	Server struct {
 		Address struct {
@@ -38,15 +38,6 @@ type config struct {
 		ReadyTimeout    time.Duration `split_words:"true" default:"10s"`
 		ShutdownTimeout time.Duration `split_words:"true" default:"15s"`
 		RequestTimeout  time.Duration `split_words:"true" default:"45s"`
-	}
-	Secret struct {
-		RedisKey          string `split_words:"true" required:"true"`
-		RedisCertificate  string `split_words:"true"`
-		DatabaseKey       string `split_words:"true" required:"true"`
-		IDTokenKeyID      string `split_words:"true" required:"true"`
-		IDTokenPublicKey  string `split_words:"true" required:"true"`
-		IDTokenPrivateKey string `split_words:"true" required:"true"`
-		OpaqueTokenKey    string `split_words:"true" required:"true"`
 	}
 	Project struct {
 		ID string `required:"true"`
