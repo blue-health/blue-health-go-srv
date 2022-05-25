@@ -11,11 +11,11 @@ on:
 jobs:
   ci:
     name: CI
-    uses: blue-health/blue-health-go-srv/.github/workflows/ci.yml@main
+    uses: blue-health/blue-health-go-srv/.github/workflows/ci.yml@develop
   cd:
     name: CD
     needs: ci
-    uses: blue-health/blue-health-go-srv/.github/workflows/cd.yml@main
+    uses: blue-health/blue-health-go-srv/.github/workflows/cd.yml@develop
     with:
       app: blue-health-go-srv
       namespace: my_namespace
