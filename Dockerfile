@@ -2,9 +2,16 @@ FROM golang:1.18-alpine AS builder
 
 WORKDIR /app
 
-COPY ./ ./
+COPY go.* ./
 
-RUN apk add --update make && make compile
+RUN go mod download
+
+COPY . .
+
+RUN GOOS=linux \
+    GOARCH=amd64 \
+    CGO_ENABLED=0 \
+    go build -ldflags "-s -w" -o bin/blue-health-go-srv-linux-amd64 main.go
 
 # ---
 
