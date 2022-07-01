@@ -9,6 +9,7 @@ import (
 
 	"github.com/blue-health/blue-health-go-srv/app/util"
 	"github.com/go-playground/validator/v10"
+	log "github.com/sirupsen/logrus"
 )
 
 type (
@@ -39,9 +40,10 @@ func ErrorC(w http.ResponseWriter, code int) {
 
 func Error(w http.ResponseWriter, err error) {
 	var (
-		code    = http.StatusInternalServerError
-		message string
-		fields  []f
+		originalErr = err
+		code        = http.StatusInternalServerError
+		message     string
+		fields      []f
 	)
 
 	err = unwrap(err)
@@ -84,6 +86,13 @@ func Error(w http.ResponseWriter, err error) {
 		if c, ok := mappedErrors[err]; ok {
 			code = c
 		}
+	}
+
+	switch {
+	case code >= http.StatusBadRequest && code < http.StatusInternalServerError:
+		log.WithFields(log.Fields{"http_code": code, "error_code": message, "err": originalErr}).Warn("application error")
+	case code >= http.StatusInternalServerError:
+		log.WithFields(log.Fields{"http_code": code, "error_code": message, "err": originalErr}).Warn("server error")
 	}
 
 	w.Header().Set("Content-Type", "application/json")
