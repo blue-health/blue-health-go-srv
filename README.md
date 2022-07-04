@@ -10,7 +10,7 @@
 
 This is the template - a starting point for creating new Golang services for our cluster.
 
-## Builing
+## Building
 
 To build for you local architecture:
 
