@@ -1,7 +1,6 @@
 package util
 
 import (
-	"bytes"
 	"database/sql/driver"
 	"encoding/json"
 	"strings"
@@ -9,13 +8,26 @@ import (
 	"github.com/google/uuid"
 )
 
+// UUID can be used with the standard sql package to represent a
+// UUID value that can be NULL in the database
 type UUID struct {
 	UUID  uuid.UUID
 	Valid bool
 }
 
 func FromUUID(id uuid.UUID) UUID {
-	return UUID{UUID: id, Valid: true}
+	return UUID{
+		UUID:  id,
+		Valid: true,
+	}
+}
+
+func (u UUID) Interface() interface{} {
+	if !u.Valid {
+		return nil
+	}
+
+	return u.UUID
 }
 
 func NewUUID(u uuid.UUID) UUID {
@@ -31,18 +43,8 @@ func (u UUID) Value() (driver.Value, error) {
 }
 
 func (u *UUID) Scan(src interface{}) error {
-	u.UUID, u.Valid = uuid.Nil, false
-
-	switch t := src.(type) {
-	case string:
-		if t == "" {
-			return nil
-		}
-	case []byte:
-		if len(t) == 0 {
-			return nil
-		}
-	case nil:
+	if src == nil {
+		u.UUID, u.Valid = uuid.Nil, false
 		return nil
 	}
 
@@ -56,26 +58,34 @@ func (u UUID) MarshalJSON() ([]byte, error) {
 		return json.Marshal(u.UUID.String())
 	}
 
-	return nullJSON, nil
+	return json.Marshal(nil)
 }
 
 func (u *UUID) UnmarshalJSON(text []byte) error {
-	u.UUID, u.Valid = uuid.Nil, false
+	u.Valid = false
+	u.UUID = uuid.Nil
 
-	if bytes.Equal(text, nullJSON) {
+	if string(text) == "null" {
 		return nil
 	}
 
-	p, err := uuid.Parse(strings.Trim(string(text), "\""))
+	s := string(text)
+	s = strings.TrimPrefix(s, "\"")
+	s = strings.TrimSuffix(s, "\"")
+
+	us, err := uuid.Parse(s)
 	if err != nil {
 		return err
 	}
 
-	u.UUID, u.Valid = p, true
+	u.UUID = us
+	u.Valid = true
 
 	return nil
 }
 
+// UnmarshalText will unmarshal text value into
+// the propert representation of that value.
 func (u *UUID) UnmarshalText(text []byte) error {
 	return u.UnmarshalJSON(text)
 }

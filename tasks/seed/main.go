@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"embed"
+	"fmt"
 	"os"
 	"time"
 
@@ -15,7 +16,7 @@ import (
 )
 
 type (
-	input struct {
+	config struct {
 		Delay    time.Duration `split_words:"true" default:"6s"`
 		Database struct {
 			DSN string `required:"true"`
@@ -42,11 +43,19 @@ func init() {
 func main() {
 	ctx := context.Background()
 
-	var i input
-	if err := envconfig.Process(app, &i); err != nil {
-		log.Fatalf("failed to load input: %v", err)
+	var cfg config
+	if err := envconfig.Process(app, &cfg); err != nil {
+		log.Fatalf("failed to load config: %v", err)
 	}
 
+	time.Sleep(cfg.Delay)
+
+	if err := run(ctx, &cfg); err != nil {
+		log.Fatalf("failed to migrate: %v", err)
+	}
+}
+
+func run(ctx context.Context, cfg *config) error {
 	f, err := seedFs.ReadFile("data.yaml")
 	if err != nil {
 		log.Fatalf("failed to read data.yaml: %v", err)
@@ -57,11 +66,9 @@ func main() {
 		log.Fatalf("failed to unmarshal data.yaml: %v", err)
 	}
 
-	time.Sleep(i.Delay)
-
-	db, err := storage.NewPostgres(ctx, i.Database.DSN)
+	db, err := storage.NewPostgres(ctx, cfg.Database.DSN)
 	if err != nil {
-		log.Fatalf("failed to connect to database: %v", err)
+		return fmt.Errorf("failed to connect to database: %v", err)
 	}
 
 	defer func() {
@@ -72,12 +79,11 @@ func main() {
 
 	var c int
 	if err := db.GetContext(ctx, &c, "select count(id) from cards"); err != nil {
-		log.Errorf("failed to query card number: %v", err)
-		return
+		return fmt.Errorf("failed to query card number: %w", err)
 	}
 
 	if c > 0 {
-		return
+		return nil
 	}
 
 	var (
@@ -89,6 +95,8 @@ func main() {
 	// Insert models
 
 	if err := tx.Commit(); err != nil {
-		log.Errorf("failed to commit transaction: %v", err)
+		return fmt.Errorf("failed to commit transaction: %w", err)
 	}
+
+	return nil
 }

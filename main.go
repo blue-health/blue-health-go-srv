@@ -11,6 +11,7 @@ import (
 	"runtime"
 	"sync"
 	"sync/atomic"
+	"syscall"
 	"time"
 
 	"github.com/blue-health/blue-health-go-srv/app/secret"
@@ -32,12 +33,13 @@ type config struct {
 			Private       string `default:":8081"`
 			Observability string `default:":9090"`
 		}
-		ReadTimeout     time.Duration `split_words:"true" default:"10s"`
-		WriteTimeout    time.Duration `split_words:"true" default:"10s"`
-		IdleTimeout     time.Duration `split_words:"true" default:"30s"`
-		ReadyTimeout    time.Duration `split_words:"true" default:"10s"`
-		ShutdownTimeout time.Duration `split_words:"true" default:"15s"`
-		RequestTimeout  time.Duration `split_words:"true" default:"45s"`
+		ReadTimeout       time.Duration `split_words:"true" default:"10s"`
+		WriteTimeout      time.Duration `split_words:"true" default:"10s"`
+		IdleTimeout       time.Duration `split_words:"true" default:"30s"`
+		ReadyTimeout      time.Duration `split_words:"true" default:"10s"`
+		ShutdownTimeout   time.Duration `split_words:"true" default:"15s"`
+		RequestTimeout    time.Duration `split_words:"true" default:"45s"`
+		ReadHeaderTimeout time.Duration `split_words:"true" default:"30s"`
 	}
 	Project struct {
 		ID string `required:"true"`
@@ -138,7 +140,7 @@ func run(ctx context.Context, cfg *config) error {
 	go runServer(privateServer)
 	go runServer(observabilityServer)
 
-	signal.Notify(quit, os.Interrupt)
+	signal.Notify(quit, os.Interrupt, syscall.SIGTERM)
 
 	go func() {
 		<-quit
@@ -247,11 +249,12 @@ func newServer(ctx context.Context, cfg *config, address string, f func(chi.Rout
 	f(r)
 
 	return &http.Server{
-		Addr:         address,
-		ReadTimeout:  cfg.Server.ReadTimeout,
-		WriteTimeout: cfg.Server.WriteTimeout,
-		IdleTimeout:  cfg.Server.IdleTimeout,
-		Handler:      r,
+		Addr:              address,
+		ReadTimeout:       cfg.Server.ReadTimeout,
+		WriteTimeout:      cfg.Server.WriteTimeout,
+		IdleTimeout:       cfg.Server.IdleTimeout,
+		ReadHeaderTimeout: cfg.Server.ReadHeaderTimeout,
+		Handler:           r,
 		BaseContext: func(net.Listener) context.Context {
 			return ctx
 		},

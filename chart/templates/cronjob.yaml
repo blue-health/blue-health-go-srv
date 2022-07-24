@@ -5,7 +5,7 @@
 apiVersion: batch/v1
 kind: CronJob
 metadata:
-  name: cj-{{ template "project.name" $ }}-{{ $name }}
+  name: cj-{{ template "project.name" $ }}-{{ kebabcase $name }}
   labels:
     app.kubernetes.io/tier: cronjob
     {{- include "project.labels" $ | nindent 4 }}

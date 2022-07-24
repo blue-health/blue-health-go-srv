@@ -61,7 +61,7 @@ spec:
         envFrom:
         {{- if $.Values.migrations.configMap }}
           - configMapRef:
-              name: cm-{{ template "project.name" $ }}-{{ $.Values.migrations.configMap }}
+              name: cm-{{ template "project.name" $ }}-{{ kebabcase $.Values.migrations.configMap }}
         {{- end }}
         {{- if $.Values.secrets }}
           - secretRef:

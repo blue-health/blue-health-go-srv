@@ -23,5 +23,6 @@ go.work
 bin/
 build/
 
+.vscode/
 .env.local
 .DS_Store

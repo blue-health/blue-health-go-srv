@@ -69,7 +69,7 @@ jobs:
           ADDITIONAL_VALUES: ${{ secrets.additional_values }}
 
       - name: Setup Helm
-        uses: azure/setup-helm@v2.1
+        uses: azure/setup-helm@v3.1
 
       - name: Authenticate with Google Cloud
         uses: "google-github-actions/auth@v0"
@@ -104,9 +104,6 @@ jobs:
 
       - name: Open IAP tunnel to Bastion
         run: |-
-          for i in $(gcloud compute os-login ssh-keys list | grep -v FINGERPRINT); do \
-            gcloud compute os-login ssh-keys remove --key $i; \
-          done; \
           gcloud compute ssh $BASTION \
             --tunnel-through-iap \
             --strict-host-key-checking no \
