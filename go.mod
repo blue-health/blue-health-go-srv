@@ -13,7 +13,7 @@ require (
 	github.com/hellofresh/health-go/v4 v4.6.0
 	github.com/jmoiron/sqlx v1.3.5
 	github.com/kelseyhightower/envconfig v1.4.0
-	github.com/lib/pq v1.10.6
+	github.com/lib/pq v1.10.7
 	github.com/sirupsen/logrus v1.9.0
 	google.golang.org/genproto v0.0.0-20220722212130-b98a9ff5e252
 	gopkg.in/yaml.v2 v2.4.0
