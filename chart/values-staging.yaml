@@ -9,28 +9,24 @@ deployments:
           requests:
             cpu: 20m
             memory: 20Mi
-      proxy:
-        resources:
-          requests:
-            cpu: 50m
-            memory: 50Mi
-        command:
-          - "/cloud_sql_proxy"
-          - "-ip_address_types=PRIVATE"
-          - "-instances=XXX=tcp:5432"
+    strategy:
+      rollingUpdate:
+        maxUnavailable: 1
+        maxSurge: 2
     nodeSelector:
       cloud.google.com/gke-nodepool: general-n2-standard-2
 
 migrations:
-  containers:
-    proxy:
-      args:
-        - |
-          /cloud_sql_proxy -ip_address_types=PRIVATE -instances=XXX=tcp:5432 &
-          CHILD_PID=$!
-          (while true; do if [[ -f "/lifecycle/main-terminated" ]]; then kill $CHILD_PID; fi; sleep 1; done) &
-          wait $CHILD_PID
-          if [[ -f "/lifecycle/main-terminated" ]]; then exit 0; fi
+  app:
+    containers:
+      proxy:
+        args:
+          - |
+            /cloud_sql_proxy -ip_address_types=PRIVATE -instances=XXX=tcp:5432 &
+            CHILD_PID=$!
+            (while true; do if [[ -f "/lifecycle/main-terminated" ]]; then kill $CHILD_PID; fi; sleep 1; done) &
+            wait $CHILD_PID
+            if [[ -f "/lifecycle/main-terminated" ]]; then exit 0; fi
 
 networkPolicies:
   database:
@@ -65,4 +61,16 @@ hpa:
             averageUtilization: 50
 
 configMaps:
-  app: {}
+  app:
+    BLUE_HEALTH_GO_SRV_PROJECT_ID: prj-blue-s-blue-cluster-13b7
+    BLUE_HEALTH_GO_SRV_APP_ENVIRONMENT: staging
+    BLUE_HEALTH_GO_SRV_DATABASE_MAX_CONNS: "15"
+    BLUE_HEALTH_GO_SRV_DATABASE_CLOUD_NAME: prj-blue-s-blue-cluster-13b7:europe-west3:psql-s-europe-west3-blue-identity-srv-ce5a1dd5
+  appInit:
+    BLUE_HEALTH_GO_SRV_SEED_APP_ENVIRONMENT: staging
+    BLUE_HEALTH_GO_SRV_SEED_PROJECT_ID: prj-blue-s-blue-cluster-13b7
+    BLUE_HEALTH_GO_SRV_SEED_DATABASE_MAX_CONNS: "10"
+    BLUE_HEALTH_GO_SRV_SEED_DATABASE_CLOUD_NAME: prj-blue-s-blue-cluster-13b7:europe-west3:psql-s-europe-west3-blue-identity-srv-ce5a1dd5
+    BLUE_HEALTH_GO_SRV_MIGRATE_APP_ENVIRONMENT: staging
+    BLUE_HEALTH_GO_SRV_MIGRATE_PROJECT_ID: prj-blue-s-blue-cluster-13b7
+    BLUE_HEALTH_GO_SRV_MIGRATE_TOUCH_FILE: /lifecycle/main-terminated

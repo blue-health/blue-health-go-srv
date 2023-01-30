@@ -3,7 +3,7 @@ OK_COLOR=\033[32;01m
 ERROR_COLOR=\033[31;01m
 WARN_COLOR=\033[33;01m
 
-SERVICE_NAME=blue-health-go-srv-migrate
+SERVICE_NAME=billing-srv-migrate
 
 .PHONY: all format build
 all: format build

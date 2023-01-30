@@ -1,4 +1,4 @@
-FROM golang:1.18-alpine AS builder
+FROM golang:1.19-alpine AS builder
 
 WORKDIR /app
 
@@ -13,12 +13,12 @@ WORKDIR /app/tasks/seed
 RUN GOOS=linux \
     GOARCH=amd64 \
     CGO_ENABLED=0 \
-    go build -ldflags "-s -w" -o bin/blue-health-go-srv-seed-linux-amd64 main.go
+    go build -ldflags "-s -w" -o bin/billing-srv-seed-linux-amd64 main.go
 
 # ---
 
 FROM gcr.io/distroless/static:nonroot
 
-COPY --from=builder /app/tasks/seed/bin/blue-health-go-srv-seed-linux-amd64 /
+COPY --from=builder /app/tasks/seed/bin/billing-srv-seed-linux-amd64 /
 
-CMD ["/blue-health-go-srv-seed-linux-amd64"] 
+CMD ["/billing-srv-seed-linux-amd64"] 

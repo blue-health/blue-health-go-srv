@@ -21,7 +21,6 @@ linters:
   disable-all: true
   enable:
     - bodyclose
-    - deadcode
     - depguard
     - dogsled
     - errcheck
@@ -42,17 +41,15 @@ linters:
     - predeclared
     - revive
     - staticcheck
-    - structcheck
     - stylecheck
     - thelper
     - tparallel
     - typecheck
     - unconvert
     - unparam
-    - varcheck
     - whitespace
     - wsl
 
 run:
-  go: "1.18"
+  go: "1.19"
   issues-exit-code: 1

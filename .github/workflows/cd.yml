@@ -69,16 +69,18 @@ jobs:
           ADDITIONAL_VALUES: ${{ secrets.additional_values }}
 
       - name: Setup Helm
-        uses: azure/setup-helm@v3.1
+        uses: azure/setup-helm@v3
 
       - name: Authenticate with Google Cloud
-        uses: "google-github-actions/auth@v0"
+        uses: google-github-actions/auth@v1
         with:
           service_account: ${{ secrets.WORKLOAD_IDENTITY_SERVICE_ACCOUNT }}
           workload_identity_provider: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER }}
 
       - name: Configure Google Cloud
-        uses: google-github-actions/setup-gcloud@v0
+        uses: google-github-actions/setup-gcloud@v1
+        with:
+          install_components: "gke-gcloud-auth-plugin"
 
       - name: Configure Docker
         run: gcloud auth configure-docker $REGISTRY
@@ -96,6 +98,8 @@ jobs:
         run: docker push $REPOSITORY_MIGRATION:$GITHUB_SHA
 
       - name: Configure Kubernetes
+        env:
+          USE_GKE_GCLOUD_AUTH_PLUGIN: "True"
         run: |-
           gcloud container clusters get-credentials \
             --project $CLUSTER_PROJECT \

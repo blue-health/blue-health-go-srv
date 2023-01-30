@@ -110,11 +110,11 @@ spec:
           httpGet:
             path: {{ .path | default "/livez" }}
             port: {{ .port | default "http-probe" }}
-          initialDelaySeconds: {{ .initialDelaySeconds | default 10 }}
-          periodSeconds: {{ .periodSeconds | default 10 }}
-          timeoutSeconds: {{ .timeoutSeconds | default 1 }}
+          initialDelaySeconds: {{ .initialDelaySeconds | default 5 }}
+          periodSeconds: {{ .periodSeconds | default 2 }}
+          timeoutSeconds: {{ .timeoutSeconds | default 1}}
           successThreshold: {{ .successThreshold | default 1 }}
-          failureThreshold: {{ .failureThreshold | default 3 }}
+          failureThreshold: {{ .failureThreshold | default 2 }}
         {{- end }}
         {{- end }}
         {{- if and .readinessProbe .readinessProbe.enabled }}
@@ -123,11 +123,11 @@ spec:
           httpGet:
             path: {{ .path | default "/readyz" }}
             port: {{ .port | default "http-probe" }}
-          initialDelaySeconds: {{ .initialDelaySeconds | default 10 }}
-          periodSeconds: {{ .periodSeconds | default 10 }}
-          timeoutSeconds: {{ .timeoutSeconds | default 1 }}
+          initialDelaySeconds: {{ .initialDelaySeconds | default 5 }}
+          periodSeconds: {{ .periodSeconds | default 2 }}
+          timeoutSeconds: {{ .timeoutSeconds | default 1}}
           successThreshold: {{ .successThreshold | default 1 }}
-          failureThreshold: {{ .failureThreshold | default 3 }}
+          failureThreshold: {{ .failureThreshold | default 2 }}
         {{- end }}
         {{- end }}
         {{- if .resources }}
@@ -162,7 +162,7 @@ spec:
         {{ toYaml . | nindent 8 }}
       {{- end }}
       {{- end }}
-      serviceAccountName: {{ $.Values.serviceAccount }}
+      serviceAccountName: {{ if .serviceAccount -}} {{ .serviceAccount }} {{- else -}} {{ $.Values.serviceAccount }} {{- end }}
 {{- end }} 
 {{- end }}
 {{- end }}

@@ -1,28 +1,28 @@
-{{- range $name, $migration := .Values.migrations }}
-{{- if $migration.enabled }}
-{{- with $migration }}
+{{- range $name, $seed := .Values.seeds }}
+{{- if $seed.enabled }}
+{{- with $seed }}
 ---
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: j-{{ template "project.name" $ }}-{{ $name }}-migrations
+  name: j-{{ template "project.name" $ }}-{{ $name }}-seeds
   labels:
-    app.kubernetes.io/component: migrations
+    app.kubernetes.io/component: seeds
     {{ include "project.labels" $ | nindent 4 }}
     {{- if .labels }}
     {{ toYaml .labels | nindent 4 }}
     {{- end }}
   annotations:
-    "helm.sh/hook": "pre-install,pre-upgrade"
-    "helm.sh/hook-delete-policy": "hook-succeeded"
-    "helm.sh/hook-weight": "-10"
+    {{- if .annotations }}
+    {{ toYaml .annotations | nindent 4 }}
+    {{- end }}
 spec:
   activeDeadlineSeconds: 300
   template:
     metadata:
-      name: j-p-{{ template "project.name" $ }}-{{ $name }}-migrations
+      name: j-p-{{ template "project.name" $ }}-{{ $name }}-seeds
       labels:
-        app.kubernetes.io/component: migrations-pod
+        app.kubernetes.io/component: seeds-pod
         {{ include "project.labels" $ | nindent 8 }}
         {{- if .labels }}
         {{ toYaml .labels | nindent 8 }}
@@ -60,11 +60,11 @@ spec:
           {{- toYaml . | nindent 10 }}
         {{- end }}
         {{- end }}
-        {{- if or ($migration.configMap) ($.Values.secrets) }}
+        {{- if or ($seed.configMap) ($.Values.secrets) }}
         envFrom:
-        {{- if $migration.configMap }}
+        {{- if $seed.configMap }}
           - configMapRef:
-              name: cm-{{ template "project.name" $ }}-{{ kebabcase $migration.configMap }}
+              name: cm-{{ template "project.name" $ }}-{{ kebabcase $seed.configMap }}
         {{- end }}
         {{- if $.Values.secrets }}
           - secretRef:
@@ -86,6 +86,6 @@ spec:
       {{- end }}
       {{- end }}
       serviceAccountName: {{ if .serviceAccount -}} {{ .serviceAccount }} {{- else -}} {{ $.Values.serviceAccount }} {{- end }}
-{{- end }} 
+{{- end }}
 {{- end }}
 {{- end }}
