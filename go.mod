@@ -6,7 +6,7 @@ require (
 	cloud.google.com/go/cloudsqlconn v1.1.1
 	cloud.google.com/go/logging v1.6.1
 	github.com/Masterminds/squirrel v1.5.3
-	github.com/blue-health/blue-go-toolbox v0.1.18
+	github.com/blue-health/blue-go-toolbox v0.1.19
 	github.com/getsentry/sentry-go v0.17.0
 	github.com/go-chi/chi/v5 v5.0.8
 	github.com/go-chi/render v1.0.2
@@ -18,7 +18,7 @@ require (
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/lib/pq v1.10.7
 	golang.org/x/net v0.5.0
-	google.golang.org/api v0.108.0
+	google.golang.org/api v0.109.0
 	google.golang.org/grpc v1.52.3
 	gopkg.in/guregu/null.v4 v4.0.0
 	gopkg.in/yaml.v2 v2.4.0
@@ -57,6 +57,6 @@ require (
 	golang.org/x/text v0.6.0 // indirect
 	golang.org/x/time v0.3.0 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
-	google.golang.org/genproto v0.0.0-20230127162408-596548ed4efa // indirect
+	google.golang.org/genproto v0.0.0-20230202175211-008b39050e57 // indirect
 	google.golang.org/protobuf v1.28.1 // indirect
 )
