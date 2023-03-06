@@ -7,7 +7,7 @@ require (
 	cloud.google.com/go/logging v1.6.1
 	github.com/Masterminds/squirrel v1.5.3
 	github.com/blue-health/blue-go-toolbox v0.1.18
-	github.com/getsentry/sentry-go v0.17.0
+	github.com/getsentry/sentry-go v0.19.0
 	github.com/go-chi/chi/v5 v5.0.8
 	github.com/go-chi/render v1.0.2
 	github.com/go-playground/validator/v10 v10.11.2
